@@ -1,0 +1,21 @@
+{
+  "name": "mutex-bot-gg",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Alex Ciarlillo <alex.ciarlillo@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.2.2",
+    "dotenv": "^16.0.3",
+    "ws": "^8.11.0"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": "16.x"
+  },
+  "devDependencies": {
+    "prettier": "^2.8.1"
+  }
+}
