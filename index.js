@@ -1,4 +1,5 @@
 require("dotenv").config();
+const moment = require("moment");
 const Guilded = require("./libs/Guilded");
 const DataStore = require("./libs/DataStore");
 
@@ -45,7 +46,15 @@ async function main() {
             return `Resource **${name}** is already registered.`;
         }
 
-        resource = { name, createdBy, lockedBy: null, description: "" };
+        const timeout = args.shift();
+
+        resource = {
+            name,
+            createdBy,
+            lockedBy: null,
+            lockedUntil: null,
+            timeout: timeout ?? process.env.RESOURCE_DEFAUL_TIMEOUT_MINS,
+        };
 
         addResource(serverId, resource);
 
@@ -66,8 +75,14 @@ async function main() {
         }
 
         resource.lockedBy = createdBy;
+        resource.lockedUntil = moment().add(resource.timeout, "minutes").unix();
 
-        console.log(resources);
+        setTimeout(() => {
+            console.log("lock timeout expired");
+            resource.lockedBy = null;
+            resource.lockedUntil = null;
+            resource.lockTimeoutId = null;
+        }, resource.timeout * 60 * 1000);
 
         return `Resource **${name}** is now locked.`;
     };
@@ -89,7 +104,13 @@ async function main() {
             return `You cannot unlocked this resource. It was locked by <@${resource.lockedBy}>.`;
         }
 
+        if (resource.lockTimeout) {
+            clearTimeout(resource.lockTimeout);
+        }
+
         resource.lockedBy = null;
+        resource.lockedUntil = null;
+        resource.lockTimeoutId = null;
 
         return `Resource **${name}** is now unlocked.`;
     };
@@ -107,7 +128,7 @@ async function main() {
                 ? `:lock: by <@${resource.lockedBy}>`
                 : `:unlock:`;
 
-            response += `Name: **${resource.name}** | Status: ${lockedStatus} | Created By: <@${resource.createdBy}>\n\n`;
+            response += `Name: **${resource.name}** | Status: ${lockedStatus} | Created By: <@${resource.createdBy}> | Timeout (mins): ${resource.timeout}\n\n`;
         });
 
         return response;
@@ -130,7 +151,9 @@ async function main() {
             (r) => r.name === name
         );
 
-        resources.splice(resourceIndex, 1);
+        if (resourceIndex >= 0) {
+            resources[serverId].splice(resourceIndex, 1);
+        }
 
         return `Resource **${name}** has been removed.`;
     };
@@ -145,7 +168,9 @@ async function main() {
         }
 
         if (resource.lockedBy) {
-            return `Resource **${name}** is :lock: by <@${resource.lockedBy}>.`;
+            return `Resource **${name}** is :lock: by <@${
+                resource.lockedBy
+            }> until ${moment(resource.lockedUntil).format()}.`;
         } else {
             return `Resource **${name}** is :unlock:.`;
         }

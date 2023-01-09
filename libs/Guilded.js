@@ -109,7 +109,7 @@ module.exports = class Guilded {
 
     socket.on("message", async (data) => {
       data = JSON.parse(data);
-      console.log("event received:", data);
+      // console.log("event received:", data);
       const { t: eventType, d: eventData } = data;
 
       this.handleMessage(data);
